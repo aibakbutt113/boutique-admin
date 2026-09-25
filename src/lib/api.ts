@@ -1,4 +1,6 @@
-export const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api";
+// `||` (not `??`) so a blank value in the hosting dashboard doesn't become "" and turn
+// every request into a relative call to this site. Trailing slashes are stripped.
+export const API = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api").replace(/\/+$/, "");
 const ORIGIN = API.replace(/\/api$/, "");
 
 /** Resolve an image path: uploads live on the API host, placeholders on this site. */

@@ -8,7 +8,7 @@ const LINKS = [
   ["/", "Dashboard"], ["/products", "Products"], ["/categories", "Categories"], ["/orders", "Orders"],
   ["/customers", "Customers"], ["/coupons", "Coupons"], ["/reviews", "Reviews"], ["/subscribers", "Subscribers"],
 ];
-const STORE_URL = process.env.NEXT_PUBLIC_STORE_URL ?? "http://localhost:3000";
+const STORE_URL = process.env.NEXT_PUBLIC_STORE_URL || "http://localhost:3000";
 
 export default function PanelLayout({ children }: LayoutProps<"/">) {
   const user = useAuth((s) => s.user);
