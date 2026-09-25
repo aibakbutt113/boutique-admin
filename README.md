@@ -1,6 +1,6 @@
 # boutique-admin
 
-Admin panel for My Friendly Boutique (Next.js). Talks to the NestJS API in `boutique-backend`; the storefront lives in `boutique-frontend`.
+Admin panel for Fustan Jameel (Next.js). Talks to the NestJS API in `boutique-backend`; the storefront lives in `boutique-frontend`.
 
 ## Run it
 

@@ -29,7 +29,7 @@ export default function PanelLayout({ children }: LayoutProps<"/">) {
   return (
     <div className="min-h-screen md:flex">
       <aside className="bg-blush md:w-56 shrink-0 p-4 md:min-h-screen">
-        <Link href="/" className="font-script text-3xl text-rosedark block mb-4">My Friendly</Link>
+        <Link href="/" className="font-script text-2xl text-rosedark block mb-4">Fustan Jameel</Link>
         <nav className="flex md:flex-col gap-1 overflow-x-auto text-sm">
           {LINKS.map(([href, label]) => (
             <Link key={href} href={href} className={`px-3 py-2 whitespace-nowrap ${path === href ? "bg-rose text-white" : "hover:bg-pinkbar"}`}>{label}</Link>

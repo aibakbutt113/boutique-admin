@@ -12,7 +12,7 @@ const cormorant = Cormorant_Garamond({
 const script = Pinyon_Script({ variable: "--font-script", subsets: ["latin"], weight: "400" });
 
 export const metadata: Metadata = {
-  title: { default: "Admin | My Friendly Boutique", template: "%s | Admin" },
+  title: { default: "Admin | Fustan Jameel", template: "%s | Admin" },
   robots: { index: false, follow: false },
 };
 
