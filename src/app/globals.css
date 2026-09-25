@@ -1,0 +1,76 @@
+@import "tailwindcss";
+
+:root {
+  --cream: #fdf4f2;
+  --blush: #fbe6e4;
+  --pink-bar: #f6d3d3;
+  --rose: #dc8b95;
+  --rose-dark: #c9707c;
+  --ink: #3a2e2e;
+  --muted: #7a6a6a;
+  --line: #efd6d4;
+}
+
+@theme inline {
+  --color-cream: var(--cream);
+  --color-blush: var(--blush);
+  --color-pinkbar: var(--pink-bar);
+  --color-rose: var(--rose);
+  --color-rosedark: var(--rose-dark);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --font-sans: var(--font-jost), system-ui, sans-serif;
+  --font-serif: var(--font-cormorant), Georgia, serif;
+  --font-script: var(--font-script), cursive;
+}
+
+body {
+  background: var(--cream);
+  color: var(--ink);
+  font-family: var(--font-sans);
+}
+
+.btn {
+  display: inline-block;
+  background: var(--rose);
+  color: #fff;
+  padding: 0.7rem 1.6rem;
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition: background 0.2s;
+  cursor: pointer;
+}
+.btn:hover {
+  background: var(--rose-dark);
+}
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.btn-outline {
+  display: inline-block;
+  border: 1px solid var(--rose);
+  color: var(--rose-dark);
+  padding: 0.65rem 1.5rem;
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.btn-outline:hover {
+  background: var(--blush);
+}
+
+.field {
+  width: 100%;
+  border: 1px solid var(--line);
+  background: #fff;
+  padding: 0.65rem 0.8rem;
+  font-size: 0.9rem;
+  outline: none;
+}
+.field:focus {
+  border-color: var(--rose);
+}
