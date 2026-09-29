@@ -26,6 +26,8 @@ export interface Product {
   isActive: boolean;
   categoryId: string;
   category: Category;
+  brandId: string | null;
+  brand: { id: string; name: string } | null;
   images: { id: string; url: string }[];
   variants: Variant[];
 }

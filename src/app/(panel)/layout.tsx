@@ -5,9 +5,9 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/store";
 
 const LINKS = [
-  ["/", "Dashboard"], ["/products", "Products"], ["/categories", "Categories"], ["/banners", "Banners"],
-  ["/orders", "Orders"], ["/customers", "Customers"], ["/coupons", "Coupons"], ["/reviews", "Reviews"],
-  ["/subscribers", "Subscribers"],
+  ["/", "Dashboard"], ["/products", "Products"], ["/categories", "Categories"], ["/brands", "Brands"],
+  ["/banners", "Banners"], ["/orders", "Orders"], ["/customers", "Customers"], ["/coupons", "Coupons"],
+  ["/reviews", "Reviews"], ["/subscribers", "Subscribers"],
 ];
 const STORE_URL = process.env.NEXT_PUBLIC_STORE_URL || "http://localhost:3000";
 

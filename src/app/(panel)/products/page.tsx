@@ -6,27 +6,34 @@ import type { Category, Paged, Product, Variant } from "@/lib/types";
 import Img from "@/components/Img";
 import { AdminTitle, Table, useAdmin } from "@/components/admin";
 
+interface Brand {
+  id: string;
+  name: string;
+}
+
 type Form = {
   id?: string; name: string; description: string; fabric: string; price: string; salePrice: string; categoryId: string;
-  isNew: boolean; isFeatured: boolean; isActive: boolean; images: string[]; variants: Pick<Variant, "size" | "color" | "stock">[];
+  brandId: string; isNew: boolean; isFeatured: boolean; isActive: boolean; images: string[];
+  variants: Pick<Variant, "size" | "color" | "stock">[];
 };
 
 const blank = (categoryId: string): Form => ({
-  name: "", description: "", fabric: "", price: "", salePrice: "", categoryId, isNew: false, isFeatured: false, isActive: true,
+  name: "", description: "", fabric: "", price: "", salePrice: "", categoryId, brandId: "", isNew: false, isFeatured: false, isActive: true,
   images: [], variants: ["S", "M", "L"].map((size) => ({ size, color: "Blush", stock: 5 })),
 });
 
 export default function Products() {
   const { data, mutate } = useAdmin<Paged<Product>>("/admin/products?limit=60");
   const { data: cats } = useAdmin<Category[]>("/categories");
+  const { data: brands } = useAdmin<Brand[]>("/admin/brands");
   const push = useToast((s) => s.push);
   const [form, setForm] = useState<Form | null>(null);
 
   const edit = (p: Product) =>
     setForm({
       id: p.id, name: p.name, description: p.description, fabric: p.fabric ?? "", price: String(p.price),
-      salePrice: p.salePrice ? String(p.salePrice) : "", categoryId: p.categoryId, isNew: p.isNew, isFeatured: p.isFeatured,
-      isActive: p.isActive, images: p.images.map((i) => i.url),
+      salePrice: p.salePrice ? String(p.salePrice) : "", categoryId: p.categoryId, brandId: p.brandId ?? "",
+      isNew: p.isNew, isFeatured: p.isFeatured, isActive: p.isActive, images: p.images.map((i) => i.url),
       variants: p.variants.map(({ size, color, stock }) => ({ size, color, stock })),
     });
 
@@ -50,8 +57,8 @@ export default function Products() {
     if (!form) return;
     const body = {
       name: form.name, description: form.description, fabric: form.fabric || undefined, price: +form.price,
-      salePrice: form.salePrice ? +form.salePrice : null, categoryId: form.categoryId, isNew: form.isNew,
-      isFeatured: form.isFeatured, isActive: form.isActive, images: form.images,
+      salePrice: form.salePrice ? +form.salePrice : null, categoryId: form.categoryId, brandId: form.brandId || null,
+      isNew: form.isNew, isFeatured: form.isFeatured, isActive: form.isActive, images: form.images,
       variants: form.variants.map((v) => ({ ...v, stock: +v.stock })),
     };
     const ok = await mutate(
@@ -72,12 +79,16 @@ export default function Products() {
         </AdminTitle>
         <input required className="field" placeholder="Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
         <textarea required rows={3} className="field" placeholder="Description" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
-        <div className="grid sm:grid-cols-4 gap-3">
+        <div className="grid sm:grid-cols-5 gap-3">
           <input className="field" placeholder="Fabric" value={form.fabric} onChange={(e) => setForm({ ...form, fabric: e.target.value })} />
           <input required type="number" min={0} className="field" placeholder="Price (Rs.)" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} />
           <input type="number" min={0} className="field" placeholder="Sale price" value={form.salePrice} onChange={(e) => setForm({ ...form, salePrice: e.target.value })} />
           <select required className="field" value={form.categoryId} onChange={(e) => setForm({ ...form, categoryId: e.target.value })}>
             {cats?.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+          <select className="field" value={form.brandId} onChange={(e) => setForm({ ...form, brandId: e.target.value })}>
+            <option value="">— No brand —</option>
+            {brands?.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
           </select>
         </div>
         <div className="flex gap-6 text-sm">
@@ -117,11 +128,11 @@ export default function Products() {
   return (
     <>
       <AdminTitle action={<button className="btn" onClick={() => cats?.length ? setForm(blank(cats[0].id)) : push("Add a category first")}>+ New product</button>}>Products</AdminTitle>
-      <Table head={["", "Name", "Category", "Price", "Stock", "Status", ""]}>
+      <Table head={["", "Name", "Category", "Brand", "Price", "Stock", "Status", ""]}>
         {data?.items.map((p) => (
           <tr key={p.id}>
             <td><Img src={p.images[0]?.url} alt="" className="w-10 h-12 object-cover" /></td>
-            <td>{p.name}</td><td>{p.category.name}</td>
+            <td>{p.name}</td><td>{p.category.name}</td><td>{p.brand?.name ?? "—"}</td>
             <td>{p.salePrice ? <><span className="text-rosedark">{money(p.salePrice)}</span> <s className="text-muted">{money(p.price)}</s></> : money(p.price)}</td>
             <td>{p.variants.reduce((n, v) => n + v.stock, 0)}</td>
             <td>{p.isActive ? "Live" : "Hidden"}</td>
