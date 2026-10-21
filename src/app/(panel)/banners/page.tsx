@@ -1,28 +1,20 @@
 "use client";
 import { useState } from "react";
-import { authedApi, useToast } from "@/lib/store";
+import { type Banner, createBanner, deleteBanner, getBanners, updateBanner, uploadImage } from "@/lib/db";
+import { useToast } from "@/lib/store";
 import Img from "@/components/Img";
 import { AdminTitle, Table, useAdmin } from "@/components/admin";
 
-interface Banner {
-  id: string;
-  imageUrl: string;
-  position: number;
-  active: boolean;
-}
-
 export default function Banners() {
-  const { data, mutate } = useAdmin<Banner[]>("/admin/banners");
+  const { data, mutate } = useAdmin(getBanners);
   const push = useToast((s) => s.push);
   const [uploading, setUploading] = useState(false);
 
   const upload = async (file: File) => {
     setUploading(true);
     try {
-      const fd = new FormData();
-      fd.append("file", file);
-      const { url } = await authedApi<{ url: string }>("/admin/upload", { method: "POST", body: fd });
-      await mutate(() => authedApi("/admin/banners", { method: "POST", json: { imageUrl: url } }), "Banner added");
+      const url = await uploadImage(file, "banners");
+      await mutate(() => createBanner(url), "Banner added");
     } catch (e) {
       push((e as Error).message);
     } finally {
@@ -37,8 +29,8 @@ export default function Banners() {
     const a = list[index];
     mutate(() =>
       Promise.all([
-        authedApi(`/admin/banners/${a.id}`, { method: "PATCH", json: { position: other.position } }),
-        authedApi(`/admin/banners/${other.id}`, { method: "PATCH", json: { position: a.position } }),
+        updateBanner(a.id, { position: other.position }),
+        updateBanner(other.id, { position: a.position }),
       ]), "Reordered");
   };
 
@@ -63,13 +55,13 @@ export default function Banners() {
             <td>
               <input
                 type="checkbox" checked={b.active}
-                onChange={(e) => mutate(() => authedApi(`/admin/banners/${b.id}`, { method: "PATCH", json: { active: e.target.checked } }), b.active ? "Hidden" : "Shown")}
+                onChange={(e) => mutate(() => updateBanner(b.id, { active: e.target.checked }), b.active ? "Hidden" : "Shown")}
               />
             </td>
             <td>
               <button
                 className="underline text-rosedark"
-                onClick={() => confirm("Delete this banner?") && mutate(() => authedApi(`/admin/banners/${b.id}`, { method: "DELETE" }), "Deleted")}
+                onClick={() => confirm("Delete this banner?") && mutate(() => deleteBanner(b.id), "Deleted")}
               >
                 Delete
               </button>

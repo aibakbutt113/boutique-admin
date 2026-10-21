@@ -1,12 +1,12 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
-import { authedApi, useToast } from "@/lib/store";
+import { useToast } from "@/lib/store";
 
-/** Fetch an admin endpoint; returns data plus reload and a toast-wrapped mutate helper. */
-export function useAdmin<T>(path: string) {
+/** Load admin data with `load` (a function from lib/db); returns data plus reload and a toast-wrapped mutate helper. */
+export function useAdmin<T>(load: () => Promise<T>) {
   const [data, setData] = useState<T | null>(null);
   const push = useToast((s) => s.push);
-  const reload = useCallback(() => authedApi<T>(path).then(setData).catch((e) => push(e.message)), [path, push]);
+  const reload = useCallback(() => load().then(setData).catch((e) => push(e.message)), [load, push]);
   useEffect(() => { reload(); }, [reload]);
   const mutate = async (fn: () => Promise<unknown>, ok = "Saved") => {
     try { await fn(); push(ok); await reload(); return true; } catch (e) { push((e as Error).message); return false; }

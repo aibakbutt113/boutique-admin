@@ -1,15 +1,10 @@
 "use client";
 import { money } from "@/lib/api";
+import { getStats } from "@/lib/db";
 import { AdminTitle, Table, useAdmin } from "@/components/admin";
 
-interface Stats {
-  revenue: number; orders: number; customers: number; products: number; pending: number;
-  lowStock: { id: string; size: string; color: string; stock: number; product: { name: string } }[];
-  recent: { id: string; number: string; total: number; status: string; user: { name: string } }[];
-}
-
 export default function Dashboard() {
-  const { data } = useAdmin<Stats>("/admin/stats");
+  const { data } = useAdmin(getStats);
   if (!data) return null;
   const cards = [
     ["Revenue", money(data.revenue)], ["Orders", data.orders], ["Pending orders", data.pending],

@@ -1,13 +1,12 @@
 "use client";
 import { money } from "@/lib/api";
-import { authedApi } from "@/lib/store";
-import type { Order } from "@/lib/types";
+import { getOrders, setOrderStatus } from "@/lib/db";
 import { AdminTitle, Table, useAdmin } from "@/components/admin";
 
 const STATUSES = ["PENDING", "CONFIRMED", "SHIPPED", "DELIVERED", "CANCELLED", "RETURN_REQUESTED", "RETURNED"];
 
 export default function Orders() {
-  const { data, mutate } = useAdmin<Order[]>("/admin/orders");
+  const { data, mutate } = useAdmin(getOrders);
   return (
     <>
       <AdminTitle>Orders</AdminTitle>
@@ -23,7 +22,7 @@ export default function Orders() {
             <td>{o.paymentMethod}<br /><span className="text-xs text-muted">{o.paymentStatus}</span></td>
             <td>
               <select className="field !py-1" value={o.status}
-                onChange={(e) => mutate(() => authedApi(`/admin/orders/${o.id}/status`, { method: "PATCH", json: { status: e.target.value } }), "Status updated")}>
+                onChange={(e) => mutate(() => setOrderStatus(o.id, e.target.value), "Status updated")}>
                 {STATUSES.map((s) => <option key={s}>{s}</option>)}
               </select>
             </td>

@@ -1,58 +1,67 @@
 "use client";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { api, bindToken } from "./api";
+import { supabase } from "./supabase";
 import type { User } from "./types";
+
+// ---------- auth (Supabase Auth; only profiles with role ADMIN get past the panel layout) ----------
 
 interface AuthState {
   user: User | null;
-  accessToken: string | null;
-  refreshToken: string | null;
-  setSession: (s: { user: User; accessToken: string; refreshToken: string }) => void;
-  logout: () => void;
+  /** True once the stored session has been checked. */
+  ready: boolean;
+  logout: () => Promise<void>;
 }
 
 export const useAuth = create<AuthState>()(
   persist(
     (set) => ({
       user: null,
-      accessToken: null,
-      refreshToken: null,
-      setSession: (s) => set(s),
-      logout: () => set({ user: null, accessToken: null, refreshToken: null }),
+      ready: false,
+      logout: async () => {
+        set({ user: null });
+        await supabase.auth.signOut();
+      },
     }),
-    { name: "mfb-admin-auth" },
+    { name: "mfb-admin-user", partialize: (s) => ({ user: s.user }) },
   ),
 );
 
-bindToken(() => useAuth.getState().accessToken);
-
-/** Trade the refresh token for a new access token; log out if that fails. */
-export async function refreshSession() {
-  const { refreshToken, setSession, logout } = useAuth.getState();
-  if (!refreshToken) return false;
-  try {
-    const r = await api<{ user: User; accessToken: string; refreshToken: string }>("/auth/refresh", {
-      method: "POST",
-      json: { refreshToken },
-    });
-    setSession(r);
-    return true;
-  } catch {
-    logout();
-    return false;
-  }
+async function loadUser(id: string) {
+  const { data, error } = await supabase.from("User").select("id, email, name, phone, role").eq("id", id).single();
+  if (error) throw new Error(error.message);
+  useAuth.setState({ user: data as User, ready: true });
+  return data as User;
 }
 
-/** Like api(), but retries once after refreshing an expired access token. */
-export async function authedApi<T>(path: string, init: Parameters<typeof api>[1] = {}): Promise<T> {
-  try {
-    return await api<T>(path, { ...init });
-  } catch (e) {
-    if ((e as { status?: number }).status === 401 && (await refreshSession())) return api<T>(path, { ...init });
-    throw e;
+/** Sign in and confirm the account is an admin; non-admins are signed straight back out. */
+export async function signInAdmin(email: string, password: string) {
+  const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
+  if (error) throw new Error(error.message === "Invalid login credentials" ? "Invalid email or password" : error.message);
+  const user = await loadUser(data.user.id);
+  if (user.role !== "ADMIN") {
+    await useAuth.getState().logout();
+    throw new Error("This account is not an admin");
   }
+  return user;
 }
+
+if (typeof window !== "undefined") {
+  supabase.auth.onAuthStateChange((event, session) => {
+    // Defer: supabase-js advises against awaiting other Supabase calls inside this callback.
+    setTimeout(async () => {
+      if (!session) return useAuth.setState({ user: null, ready: true });
+      if (event === "TOKEN_REFRESHED" && useAuth.getState().user?.id === session.user.id) return;
+      try {
+        await loadUser(session.user.id);
+      } catch {
+        useAuth.setState({ ready: true });
+      }
+    }, 0);
+  });
+}
+
+// ---------- toasts ----------
 
 interface Toast {
   id: number;

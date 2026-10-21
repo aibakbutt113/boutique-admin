@@ -1,19 +1,22 @@
 "use client";
 import { useState } from "react";
-import { authedApi } from "@/lib/store";
-import type { Category } from "@/lib/types";
+import { createCategory, deleteCategory, getCategories, uploadImage } from "@/lib/db";
+import { useToast } from "@/lib/store";
 import Img from "@/components/Img";
 import { AdminTitle, Table, useAdmin } from "@/components/admin";
 
 export default function Categories() {
-  const { data, mutate } = useAdmin<Category[]>("/categories");
+  const { data, mutate } = useAdmin(getCategories);
+  const push = useToast((s) => s.push);
   const [name, setName] = useState("");
   const [image, setImage] = useState("");
 
   const upload = async (file: File) => {
-    const fd = new FormData();
-    fd.append("file", file);
-    setImage((await authedApi<{ url: string }>("/admin/upload", { method: "POST", body: fd })).url);
+    try {
+      setImage(await uploadImage(file, "categories"));
+    } catch (e) {
+      push((e as Error).message);
+    }
   };
 
   return (
@@ -21,7 +24,7 @@ export default function Categories() {
       <AdminTitle>Categories</AdminTitle>
       <form className="flex flex-wrap gap-2 mb-6 items-center" onSubmit={async (e) => {
         e.preventDefault();
-        if (await mutate(() => authedApi("/admin/categories", { method: "POST", json: { name, image: image || undefined } }), "Category added")) { setName(""); setImage(""); }
+        if (await mutate(() => createCategory(name, image), "Category added")) { setName(""); setImage(""); }
       }}>
         <input required className="field !w-56" placeholder="Category name" value={name} onChange={(e) => setName(e.target.value)} />
         <input type="file" accept="image/*" onChange={(e) => e.target.files?.[0] && upload(e.target.files[0])} />
@@ -32,7 +35,7 @@ export default function Categories() {
         {data?.map((c) => (
           <tr key={c.id}>
             <td><Img src={c.image} alt="" className="w-10 h-12 object-cover" /></td><td>{c.name}</td><td>{c.slug}</td>
-            <td><button className="underline text-rosedark" onClick={() => confirm("Delete category? Categories with products can't be deleted.") && mutate(() => authedApi(`/admin/categories/${c.id}`, { method: "DELETE" }), "Deleted")}>Delete</button></td>
+            <td><button className="underline text-rosedark" onClick={() => confirm("Delete category? Categories with products can't be deleted.") && mutate(() => deleteCategory(c.id), "Deleted")}>Delete</button></td>
           </tr>
         ))}
       </Table>

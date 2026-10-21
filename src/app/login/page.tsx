@@ -1,13 +1,10 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { api } from "@/lib/api";
-import { useAuth, useToast } from "@/lib/store";
-import type { User } from "@/lib/types";
+import { signInAdmin, useToast } from "@/lib/store";
 
 export default function AdminLogin() {
   const router = useRouter();
-  const setSession = useAuth((s) => s.setSession);
   const push = useToast((s) => s.push);
   const [f, setF] = useState({ email: "", password: "" });
   const [busy, setBusy] = useState(false);
@@ -16,9 +13,7 @@ export default function AdminLogin() {
     e.preventDefault();
     setBusy(true);
     try {
-      const r = await api<{ user: User; accessToken: string; refreshToken: string }>("/auth/login", { method: "POST", json: f });
-      if (r.user.role !== "ADMIN") return push("This account is not an admin");
-      setSession(r);
+      await signInAdmin(f.email, f.password);
       const next = new URLSearchParams(window.location.search).get("next");
       // Only follow same-site relative redirects.
       router.push(next?.startsWith("/") && !next.startsWith("//") ? next : "/");

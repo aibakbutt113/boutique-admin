@@ -1,15 +1,11 @@
 "use client";
 import { useState } from "react";
 import { money } from "@/lib/api";
-import { authedApi, useToast } from "@/lib/store";
-import type { Category, Paged, Product, Variant } from "@/lib/types";
+import { getBrands, getCategories, getProducts, hideProduct, saveProduct, uploadImage } from "@/lib/db";
+import { useToast } from "@/lib/store";
+import type { Product, Variant } from "@/lib/types";
 import Img from "@/components/Img";
 import { AdminTitle, Table, useAdmin } from "@/components/admin";
-
-interface Brand {
-  id: string;
-  name: string;
-}
 
 type Form = {
   id?: string; name: string; description: string; fabric: string; price: string; salePrice: string; categoryId: string;
@@ -23,9 +19,9 @@ const blank = (categoryId: string): Form => ({
 });
 
 export default function Products() {
-  const { data, mutate } = useAdmin<Paged<Product>>("/admin/products?limit=60");
-  const { data: cats } = useAdmin<Category[]>("/categories");
-  const { data: brands } = useAdmin<Brand[]>("/admin/brands");
+  const { data, mutate } = useAdmin(getProducts);
+  const { data: cats } = useAdmin(getCategories);
+  const { data: brands } = useAdmin(getBrands);
   const push = useToast((s) => s.push);
   const [form, setForm] = useState<Form | null>(null);
 
@@ -41,11 +37,7 @@ export default function Products() {
     if (!files || !form) return;
     try {
       const urls: string[] = [];
-      for (const f of Array.from(files)) {
-        const fd = new FormData();
-        fd.append("file", f);
-        urls.push((await authedApi<{ url: string }>("/admin/upload", { method: "POST", body: fd })).url);
-      }
+      for (const f of Array.from(files)) urls.push(await uploadImage(f, "products"));
       setForm((s) => s && { ...s, images: [...s.images, ...urls] });
     } catch (e) {
       push((e as Error).message);
@@ -56,13 +48,13 @@ export default function Products() {
     e.preventDefault();
     if (!form) return;
     const body = {
-      name: form.name, description: form.description, fabric: form.fabric || undefined, price: +form.price,
+      name: form.name, description: form.description, fabric: form.fabric, price: +form.price,
       salePrice: form.salePrice ? +form.salePrice : null, categoryId: form.categoryId, brandId: form.brandId || null,
       isNew: form.isNew, isFeatured: form.isFeatured, isActive: form.isActive, images: form.images,
       variants: form.variants.map((v) => ({ ...v, stock: +v.stock })),
     };
     const ok = await mutate(
-      () => authedApi(form.id ? `/admin/products/${form.id}` : "/admin/products", { method: form.id ? "PATCH" : "POST", json: body }),
+      () => saveProduct(form.id, body),
       form.id ? "Product updated" : "Product created",
     );
     if (ok) setForm(null);
@@ -138,7 +130,7 @@ export default function Products() {
             <td>{p.isActive ? "Live" : "Hidden"}</td>
             <td className="whitespace-nowrap">
               <button className="underline mr-3" onClick={() => edit(p)}>Edit</button>
-              {p.isActive && <button className="underline text-rosedark" onClick={() => confirm("Hide this product from the shop?") && mutate(() => authedApi(`/admin/products/${p.id}`, { method: "DELETE" }), "Product hidden")}>Hide</button>}
+              {p.isActive && <button className="underline text-rosedark" onClick={() => confirm("Hide this product from the shop?") && mutate(() => hideProduct(p.id), "Product hidden")}>Hide</button>}
             </td>
           </tr>
         ))}

@@ -1,10 +1,9 @@
 "use client";
+import { getCustomers } from "@/lib/db";
 import { AdminTitle, Table, useAdmin } from "@/components/admin";
 
-interface Customer { id: string; name: string; email: string; phone: string | null; createdAt: string; _count: { orders: number } }
-
 export default function Customers() {
-  const { data } = useAdmin<Customer[]>("/admin/customers");
+  const { data } = useAdmin(getCustomers);
   return (
     <>
       <AdminTitle>Customers</AdminTitle>

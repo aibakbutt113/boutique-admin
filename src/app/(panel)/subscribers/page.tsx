@@ -1,8 +1,9 @@
 "use client";
+import { getSubscribers } from "@/lib/db";
 import { AdminTitle, Table, useAdmin } from "@/components/admin";
 
 export default function Subscribers() {
-  const { data } = useAdmin<{ id: string; email: string; createdAt: string }[]>("/admin/subscribers");
+  const { data } = useAdmin(getSubscribers);
   return (
     <>
       <AdminTitle>Newsletter subscribers</AdminTitle>

@@ -1,20 +1,12 @@
 "use client";
 import { useState } from "react";
-import { authedApi, useToast } from "@/lib/store";
+import { type Brand, createBrand, deleteBrand, getBrands, updateBrand, uploadImage } from "@/lib/db";
+import { useToast } from "@/lib/store";
 import Img from "@/components/Img";
 import { AdminTitle, Table, useAdmin } from "@/components/admin";
 
-interface Brand {
-  id: string;
-  name: string;
-  slug: string;
-  image: string | null;
-  position: number;
-  active: boolean;
-}
-
 export default function Brands() {
-  const { data, mutate } = useAdmin<Brand[]>("/admin/brands");
+  const { data, mutate } = useAdmin(getBrands);
   const push = useToast((s) => s.push);
   const [name, setName] = useState("");
   const [image, setImage] = useState("");
@@ -23,9 +15,7 @@ export default function Brands() {
   const upload = async (file: File) => {
     setUploading(true);
     try {
-      const fd = new FormData();
-      fd.append("file", file);
-      setImage((await authedApi<{ url: string }>("/admin/upload", { method: "POST", body: fd })).url);
+      setImage(await uploadImage(file, "brands"));
     } catch (e) {
       push((e as Error).message);
     } finally {
@@ -35,7 +25,7 @@ export default function Brands() {
 
   const add = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (await mutate(() => authedApi("/admin/brands", { method: "POST", json: { name, image: image || undefined } }), "Brand added")) {
+    if (await mutate(() => createBrand(name, image), "Brand added")) {
       setName("");
       setImage("");
     }
@@ -48,8 +38,8 @@ export default function Brands() {
     const a = list[index];
     mutate(() =>
       Promise.all([
-        authedApi(`/admin/brands/${a.id}`, { method: "PATCH", json: { position: other.position } }),
-        authedApi(`/admin/brands/${other.id}`, { method: "PATCH", json: { position: a.position } }),
+        updateBrand(a.id, { position: other.position }),
+        updateBrand(other.id, { position: a.position }),
       ]), "Reordered");
   };
 
@@ -78,13 +68,13 @@ export default function Brands() {
             <td>
               <input
                 type="checkbox" checked={b.active}
-                onChange={(e) => mutate(() => authedApi(`/admin/brands/${b.id}`, { method: "PATCH", json: { active: e.target.checked } }), b.active ? "Hidden" : "Shown")}
+                onChange={(e) => mutate(() => updateBrand(b.id, { active: e.target.checked }), b.active ? "Hidden" : "Shown")}
               />
             </td>
             <td>
               <button
                 className="underline text-rosedark"
-                onClick={() => confirm("Delete this brand? Its products stay, just unassigned from any brand.") && mutate(() => authedApi(`/admin/brands/${b.id}`, { method: "DELETE" }), "Deleted")}
+                onClick={() => confirm("Delete this brand? Its products stay, just unassigned from any brand.") && mutate(() => deleteBrand(b.id), "Deleted")}
               >
                 Delete
               </button>
