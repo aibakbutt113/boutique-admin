@@ -13,5 +13,9 @@ const browser = typeof window !== "undefined";
  * and refreshes it; on the server (server components) it is anonymous and only reads public data.
  */
 export const supabase = createClient(url || "http://localhost:54321", key || "missing-key", {
+  // Always ask the database for current data. Without this, Next.js caches these requests and
+  // pre-renders pages like the home page at build time, so admin changes (banners, products,
+  // categories) would never show up until the next deploy.
+  global: { fetch: (input, init) => fetch(input, { ...init, cache: "no-store" }) },
   auth: { persistSession: browser, autoRefreshToken: browser, detectSessionInUrl: browser, storageKey: "mfb-admin-auth" },
 });
